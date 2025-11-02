@@ -88,6 +88,18 @@ const getFileIcon = (fileType: string) => {
   return fileTypeIcons[fileType.toLowerCase()] || FileText;
 };
 
+const formatFileSize = (bytes?: number): string => {
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  let size = bytes;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+  return `${size.toFixed(1)} ${units[unitIndex]}`;
+};
+
 const statusColors = {
   active: 'bg-green-500/10 text-green-500 border-green-500/20',
   archived: 'bg-muted text-muted-foreground border-border',
@@ -203,7 +215,7 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
           {!hasSubfolders && <span className="w-3" />}
           <FolderOpen className="h-4 w-4 shrink-0" />
           <span className="truncate flex-1 text-left text-sm">{folder.name}</span>
-          <Badge variant="outline" className="ml-auto shrink-0 text-xs">{folder.documentCount}</Badge>
+          <Badge variant="outline" className="ml-auto shrink-0 text-xs">{folder.document_count}</Badge>
         </Button>
         
         {hasSubfolders && isExpanded && (
@@ -241,11 +253,11 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
 
   // Filter documents
   const filteredDocuments = documents.filter(doc => {
-    const matchesFolder = currentFolder ? doc.folderId === currentFolder : true;
+    const matchesFolder = currentFolder ? doc.folder_id === currentFolder : true;
     const matchesSearch = searchQuery ? doc.name.toLowerCase().includes(searchQuery.toLowerCase()) : true;
-    const matchesCategory = categoryFilter !== 'all' ? doc.categoryIds.includes(categoryFilter) : true;
+    const matchesCategory = categoryFilter !== 'all' ? (doc.category_ids?.includes(categoryFilter) ?? false) : true;
     const matchesDepartment = departmentFilter !== 'all' ? doc.department === departmentFilter : true;
-    const matchesFileType = fileTypeFilter !== 'all' ? doc.fileType === fileTypeFilter : true;
+    const matchesFileType = fileTypeFilter !== 'all' ? doc.file_type === fileTypeFilter : true;
     return matchesFolder && matchesSearch && matchesCategory && matchesDepartment && matchesFileType;
   });
 
@@ -254,10 +266,10 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
     switch (sortBy) {
       case 'name-asc': return a.name.localeCompare(b.name);
       case 'name-desc': return b.name.localeCompare(a.name);
-      case 'modified-desc': return new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime();
-      case 'modified-asc': return new Date(a.modifiedAt).getTime() - new Date(b.modifiedAt).getTime();
-      case 'size-desc': return parseInt(b.size) - parseInt(a.size);
-      case 'size-asc': return parseInt(a.size) - parseInt(b.size);
+      case 'modified-desc': return new Date(b.modified_at).getTime() - new Date(a.modified_at).getTime();
+      case 'modified-asc': return new Date(a.modified_at).getTime() - new Date(b.modified_at).getTime();
+      case 'size-desc': return (b.size ?? 0) - (a.size ?? 0);
+      case 'size-asc': return (a.size ?? 0) - (b.size ?? 0);
       default: return 0;
     }
   });
@@ -532,7 +544,7 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
             // Grid View
             <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
               {sortedDocuments.map((doc) => {
-                const FileIcon = getFileIcon(doc.fileType);
+                const FileIcon = getFileIcon(doc.file_type);
                 return (
                   <Card key={doc.id} className="hover:shadow-md transition-shadow cursor-pointer group">
                     <CardContent className="p-4">
@@ -546,18 +558,18 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
                       </div>
                       
                       <h3 className="font-medium text-sm mb-1 line-clamp-2">{doc.name}</h3>
-                      <p className="text-xs text-muted-foreground mb-2">{doc.size}</p>
+                      <p className="text-xs text-muted-foreground mb-2">{formatFileSize(doc.size)}</p>
                       
                       <div className="flex items-center gap-1 mb-2">
-                        <Badge variant="outline" className="text-xs">{doc.fileType.toUpperCase()}</Badge>
-                        <Badge variant="outline" className={cn("text-xs", confidentialityColors[doc.confidentialityLevel])}>
-                          {doc.confidentialityLevel}
+                        <Badge variant="outline" className="text-xs">{doc.file_type.toUpperCase()}</Badge>
+                        <Badge variant="outline" className={cn("text-xs", confidentialityColors[doc.confidentiality_level])}>
+                          {doc.confidentiality_level}
                         </Badge>
                       </div>
 
                       <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
                         <User className="h-3 w-3" />
-                        <span className="truncate">{doc.uploadedBy}</span>
+                        <span className="truncate">{doc.uploaded_by}</span>
                       </div>
 
                       <div className="flex gap-1">
@@ -583,7 +595,7 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
               <CardContent className="p-0">
                 <div className="divide-y">
                   {sortedDocuments.map((doc) => {
-                    const FileIcon = getFileIcon(doc.fileType);
+                    const FileIcon = getFileIcon(doc.file_type);
                     return (
                       <div key={doc.id} className="p-4 hover:bg-muted/50 transition-colors overflow-hidden">
                         <div className="flex items-center gap-4 min-w-0">
@@ -594,19 +606,19 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
                             <div className="flex-1 min-w-0 overflow-hidden">
                               <p className="font-medium truncate">{doc.name}</p>
                               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
-                                <Badge variant="outline" className="text-xs shrink-0">{doc.fileType.toUpperCase()}</Badge>
-                                <span className="shrink-0">{doc.size}</span>
+                                <Badge variant="outline" className="text-xs shrink-0">{doc.file_type.toUpperCase()}</Badge>
+                                <span className="shrink-0">{formatFileSize(doc.size)}</span>
                                 <span className="shrink-0">•</span>
-                                <span className="truncate">{doc.uploadedBy}</span>
+                                <span className="truncate">{doc.uploaded_by}</span>
                                 <span className="shrink-0">•</span>
-                                <span className="shrink-0">{new Date(doc.modifiedAt).toLocaleDateString()}</span>
+                                <span className="shrink-0">{new Date(doc.modified_at).toLocaleDateString()}</span>
                               </div>
                             </div>
                           </div>
                           
                           <div className="flex items-center gap-2 shrink-0">
-                            <Badge variant="outline" className={cn(confidentialityColors[doc.confidentialityLevel], "shrink-0")}>
-                              {doc.confidentialityLevel}
+                            <Badge variant="outline" className={cn(confidentialityColors[doc.confidentiality_level], "shrink-0")}>
+                              {doc.confidentiality_level}
                             </Badge>
                             <Badge className={cn(statusColors[doc.status], "shrink-0")} variant="outline">
                               {doc.status}
@@ -662,9 +674,9 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
                           </div>
                         </div>
                         
-                        {doc.categoryIds.length > 0 && (
+                        {doc.category_ids.length > 0 && (
                           <div className="flex gap-1 mt-2 ml-14 flex-wrap overflow-hidden">
-                            {doc.categoryIds.map((catId) => {
+                            {doc.category_ids.map((catId) => {
                               const category = categories.find(c => c.id === catId);
                               return category ? (
                                 <Badge key={catId} variant="secondary" className="text-xs shrink-0">
