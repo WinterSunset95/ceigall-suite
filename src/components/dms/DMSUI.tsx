@@ -63,6 +63,94 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Document as PdfDocument, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import "react-pdf/dist/esm/Page/TextLayer.css";
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+
+function DocumentPreviewer({ doc, url }: { doc: Document; url: string }) {
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [pageNumber, setPageNumber] = useState(1);
+
+  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+    setNumPages(numPages);
+    setPageNumber(1);
+  }
+
+  const goToPrevPage = () => setPageNumber((prev) => Math.max(prev - 1, 1));
+  const goToNextPage = () => setPageNumber((prev) => Math.min(prev + 1, numPages || 1));
+
+  if (!doc) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p>No document to preview.</p>
+      </div>
+    );
+  }
+
+  if (doc.mime_type === "application/pdf") {
+    return (
+      <div className="flex flex-col h-full bg-muted">
+        <div className="flex-1 overflow-auto flex justify-center p-4">
+          <PdfDocument file={url} onLoadSuccess={onDocumentLoadSuccess} className="flex justify-center">
+            <Page pageNumber={pageNumber} />
+          </PdfDocument>
+        </div>
+        {numPages && numPages > 1 && (
+          <div className="flex items-center justify-center p-2 border-t bg-card shrink-0">
+            <Button onClick={goToPrevPage} disabled={pageNumber <= 1} variant="ghost" size="sm">
+              Previous
+            </Button>
+            <span className="text-sm mx-4">
+              Page {pageNumber} of {numPages}
+            </span>
+            <Button onClick={goToNextPage} disabled={pageNumber >= numPages} variant="ghost" size="sm">
+              Next
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (doc.mime_type.startsWith("image/")) {
+    return (
+      <div className="flex items-center justify-center h-full overflow-auto p-4 bg-muted">
+        <img src={url} alt={doc.name} className="max-w-full max-h-full object-contain" />
+      </div>
+    );
+  }
+
+  if (doc.mime_type.startsWith("text/")) {
+    return (
+      <iframe
+        src={url}
+        className="w-full h-full border-0 rounded-md"
+        title={doc.name}
+        sandbox=""
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-muted">
+      <File className="h-16 w-16 text-muted-foreground mb-4" />
+      <h3 className="font-semibold text-lg">Preview not available</h3>
+      <p className="text-muted-foreground text-sm">
+        Direct preview for "{doc.mime_type}" files is not supported.
+      </p>
+      <Button
+        size="sm"
+        className="mt-4 gap-2"
+        onClick={() => downloadDocument(doc.id, doc.original_filename)}
+      >
+        <Download className="h-4 w-4" />
+        Download Document
+      </Button>
+    </div>
+  );
+}
 
 interface DMSUIProps {
   summary: DocumentSummary;
@@ -1189,13 +1277,9 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
               {previewDialog.doc?.original_filename} ({formatFileSize(previewDialog.doc?.size_bytes ?? 0)})
             </DialogDescription>
           </DialogHeader>
-          {previewDialog.url ? (
-            <div className="flex-1">
-              <iframe
-                src={previewDialog.url}
-                className="w-full h-full border-0 rounded-md"
-                title={previewDialog.doc?.name}
-              />
+          {previewDialog.url && previewDialog.doc ? (
+            <div className="flex-1 overflow-hidden">
+              <DocumentPreviewer doc={previewDialog.doc} url={previewDialog.url} />
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center">
