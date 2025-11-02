@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { DocumentSummary, Document, Folder, AISummary, Category, ConfidentialityLevel } from "@/lib/types/dms";
-import { getUploadURL, uploadFileToS3, confirmUpload } from "@/lib/api/dms";
+import { getUploadURL, uploadFileToS3, confirmUpload, createFolder } from "@/lib/api/dms";
 import { 
   FileText, 
   Upload, 
@@ -144,6 +144,9 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
     document: null,
   });
 
+  const [createFolderDialog, setCreateFolderDialog] = useState<{ open: boolean; parentId?: string | null }>({ open: false });
+  const [newFolderName, setNewFolderName] = useState('');
+
   // Mock AI summary data
   const mockAISummary: AISummary = {
     documentType: 'Contract',
@@ -242,6 +245,25 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
     } catch (error) {
       toast({ title: "Error", description: "Upload failed", variant: "destructive" });
       setUploadingFiles(new Map());
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) {
+      toast({ title: "Folder name cannot be empty", variant: "destructive" });
+      return;
+    }
+    try {
+      await createFolder({
+        name: newFolderName,
+        parent_id: createFolderDialog.parentId || undefined,
+      });
+      toast({ title: "Folder created successfully" });
+      queryClient.invalidateQueries({ queryKey: ["dms-folders"] });
+      setCreateFolderDialog({ open: false, parentId: null });
+      setNewFolderName('');
+    } catch (error) {
+      toast({ title: "Failed to create folder", variant: "destructive" });
     }
   };
 
@@ -389,7 +411,15 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
             </ScrollArea>
 
             <div className="p-3 border-t">
-              <Button variant="outline" className="w-full gap-2" size="sm">
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                size="sm"
+                onClick={() => {
+                  setNewFolderName('');
+                  setCreateFolderDialog({ open: true, parentId: currentFolder });
+                }}
+              >
                 <FolderPlus className="h-4 w-4" />
                 New Folder
               </Button>
@@ -811,6 +841,22 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
                     <SelectValue placeholder="Select a folder..." />
                   </SelectTrigger>
                   <SelectContent className="bg-popover z-50">
+                    <div className="p-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start gap-2 font-normal"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setNewFolderName('');
+                          setCreateFolderDialog({ open: true, parentId: null });
+                        }}
+                      >
+                        <FolderPlus className="h-4 w-4" />
+                        Create New Folder
+                      </Button>
+                    </div>
+                    <Separator />
                     {folders.map((folder) => (
                       <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>
                     ))}
@@ -1064,6 +1110,42 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
                 Ask AI about this
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Folder Dialog */}
+      <Dialog open={createFolderDialog.open} onOpenChange={(open) => setCreateFolderDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Folder</DialogTitle>
+            <DialogDescription>
+              Enter a name for your new folder. It will be created {createFolderDialog.parentId ? "inside the current folder." : "at the root level."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="new-folder-name" className="sr-only">Folder Name</Label>
+            <Input
+              id="new-folder-name"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              placeholder="e.g., 'Project Documents'"
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCreateFolderDialog({ open: false });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleCreateFolder} disabled={!newFolderName.trim()}>
+              Create Folder
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
