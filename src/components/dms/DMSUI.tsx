@@ -310,7 +310,7 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
           {!hasSubfolders && <span className="w-3" />}
           <FolderOpen className="h-4 w-4 shrink-0" />
           <span className="truncate flex-1 text-left text-sm">{folder.name}</span>
-          <Badge variant="outline" className="ml-auto shrink-0 text-xs">{folder.document_count}</Badge>
+          <Badge variant="outline" className="ml-auto shrink-0 text-xs">{folder.document_count + (folder.subfolders?.length || 0)}</Badge>
         </Button>
         
         {hasSubfolders && isExpanded && (
@@ -700,8 +700,8 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
                   {sortedDocuments.map((doc) => {
                     const FileIcon = getFileIcon(doc.original_filename);
                     return (
-                      <div key={doc.id} className="p-4 hover:bg-muted/50 transition-colors overflow-hidden">
-                        <div className="flex items-center gap-4 min-w-0">
+                      <div key={doc.id} className="p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                           <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
                             <div className="p-2 rounded-lg bg-muted shrink-0">
                               <FileIcon className="h-5 w-5" />
