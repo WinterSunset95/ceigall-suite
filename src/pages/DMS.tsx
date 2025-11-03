@@ -1,16 +1,19 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getDMSSummary, getDocuments, getFolders, getCategories } from "@/lib/api/dms";
 import { DMSUI } from "@/components/dms/DMSUI";
 
 export default function DMS() {
+  const [currentFolder, setCurrentFolder] = useState<string | null>(null);
+
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ["dms-summary"],
     queryFn: getDMSSummary,
   });
 
   const { data: documents, isLoading: docsLoading } = useQuery({
-    queryKey: ["dms-documents"],
-    queryFn: getDocuments,
+    queryKey: ["dms-documents", currentFolder],
+    queryFn: () => getDocuments({ folder_id: currentFolder ?? undefined }),
   });
 
   const { data: folders, isLoading: foldersLoading } = useQuery({
@@ -23,7 +26,7 @@ export default function DMS() {
     queryFn: getCategories,
   });
 
-  if (summaryLoading || docsLoading || foldersLoading || categoriesLoading) {
+  if (summaryLoading || (docsLoading && !documents) || foldersLoading || categoriesLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -34,10 +37,10 @@ export default function DMS() {
     );
   }
 
-  if (!summary || !documents || !folders || !categories) {
+  if (!summary || !folders || !categories) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-muted-foreground">Failed to load DMS data</p>
+        <p className="text-muted-foreground">Failed to load essential DMS data</p>
       </div>
     );
   }
@@ -45,9 +48,11 @@ export default function DMS() {
   return (
     <DMSUI 
       summary={summary} 
-      documents={documents} 
+      documents={documents || []} 
       folders={folders}
       categories={categories}
+      currentFolder={currentFolder}
+      setCurrentFolder={setCurrentFolder}
     />
   );
 }

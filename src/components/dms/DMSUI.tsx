@@ -112,6 +112,8 @@ interface DMSUIProps {
   documents: Document[];
   folders: Folder[];
   categories: Category[];
+  currentFolder: string | null;
+  setCurrentFolder: (id: string | null) => void;
 }
 
 type ViewMode = 'grid' | 'list';
@@ -160,13 +162,12 @@ const confidentialityColors = {
   restricted: 'bg-red-500/10 text-red-500',
 };
 
-export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
+export function DMSUI({ summary, documents, folders, categories, currentFolder, setCurrentFolder }: DMSUIProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['root-1', 'root-2']));
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [searchQuery, setSearchQuery] = useState('');
@@ -421,7 +422,6 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
 
   // Filter documents
   const filteredDocuments = documents.filter(doc => {
-    const matchesFolder = currentFolder ? doc.folder_id === currentFolder : true;
     const matchesSearch = searchQuery ? doc.name.toLowerCase().includes(searchQuery.toLowerCase()) : true;
     const matchesCategory = categoryFilter !== 'all' ? (doc.category_ids?.includes(categoryFilter) ?? false) : true;
     
@@ -437,7 +437,7 @@ export function DMSUI({ summary, documents, folders, categories }: DMSUIProps) {
       return doc.mime_type.includes(fileTypeFilter);
     })();
     
-    return matchesFolder && matchesSearch && matchesCategory && matchesDepartment && matchesFileType;
+    return matchesSearch && matchesCategory && matchesDepartment && matchesFileType;
   });
 
   // Sort documents
