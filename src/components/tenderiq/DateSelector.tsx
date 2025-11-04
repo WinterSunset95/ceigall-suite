@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,9 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Calendar, Loader2, ChevronDown } from "lucide-react";
-import { fetchAvailableDates, AvailableDate } from "@/lib/api/tenderiq";
-import { useToast } from "@/hooks/use-toast";
-
+import { useDateSelector } from "@/hooks/useDateSelector";
 
 interface DateSelectorProps {
   onDateSelect: (date: string | null, dateRange: string | null, includeAll: boolean) => void;
@@ -26,78 +23,11 @@ const DateSelector = ({
   selectedDateRange,
   includeAllDates
 }: DateSelectorProps) => {
-  const { toast } = useToast();
-  const [availableDates, setAvailableDates] = useState<AvailableDate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [displayLabel, setDisplayLabel] = useState("Loading dates...");
-
-  useEffect(() => {
-    const loadDates = async () => {
-      setLoading(true);
-      try {
-        const rawDates = await fetchAvailableDates();
-        
-        // Group by date and sum tender counts, as there can be multiple runs for the same date
-        const dateMap = new Map<string, AvailableDate>();
-        rawDates.forEach(d => {
-          if (dateMap.has(d.date)) {
-            const existing = dateMap.get(d.date)!;
-            existing.tender_count += d.tender_count;
-            if (d.is_latest) {
-              existing.is_latest = true;
-            }
-          } else {
-            // Create a copy to avoid modifying the original from the query cache
-            dateMap.set(d.date, { ...d });
-          }
-        });
-        const dates = Array.from(dateMap.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setAvailableDates(dates);
-
-        // Set default to latest date
-        if (dates.length > 0 && !selectedDate && !selectedDateRange && !includeAllDates) {
-          const latestDate = dates.find(d => d.is_latest);
-          if (latestDate) {
-            onDateSelect(latestDate.date, null, false);
-            setDisplayLabel(`Latest (${latestDate.date_str})`);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load available dates:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load available dates",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDates();
-  }, []);
-
-  // Update display label based on current selection
-  useEffect(() => {
-    if (includeAllDates) {
-      setDisplayLabel("All Dates");
-    } else if (selectedDateRange) {
-      const rangeLabels: Record<string, string> = {
-        last_1_day: "Last 1 Day",
-        last_5_days: "Last 5 Days",
-        last_7_days: "Last 7 Days",
-        last_30_days: "Last 30 Days",
-      };
-      setDisplayLabel(rangeLabels[selectedDateRange] || selectedDateRange);
-    } else if (selectedDate) {
-      const selectedDateObj = availableDates.find(d => d.date === selectedDate);
-      if (selectedDateObj) {
-        setDisplayLabel(`${selectedDateObj.date_str} (${selectedDateObj.tender_count} tenders)`);
-      } else {
-        setDisplayLabel(selectedDate);
-      }
-    }
-  }, [selectedDate, selectedDateRange, includeAllDates, availableDates]);
+  const { availableDates, isLoading, displayLabel } = useDateSelector(
+    selectedDate,
+    selectedDateRange,
+    includeAllDates
+  );
 
   const handleDateSelect = (date: string) => {
     onDateSelect(date, null, false);
@@ -117,10 +47,10 @@ const DateSelector = ({
         <Button
           variant="outline"
           className="w-full sm:w-auto"
-          disabled={loading}
+          disabled={isLoading}
         >
           <Calendar className="h-4 w-4 mr-2" />
-          {loading ? (
+          {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
             </>
@@ -175,7 +105,7 @@ const DateSelector = ({
         )}
 
         {/* Empty State */}
-        {!loading && availableDates.length === 0 && (
+        {!isLoading && availableDates.length === 0 && (
           <div className="px-2 py-6 text-center text-sm text-muted-foreground">
             No dates available
           </div>

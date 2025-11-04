@@ -1,14 +1,14 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Search, Filter, RefreshCw, ExternalLink, MessageSquare, MapPin, Calendar, IndianRupee, Loader2 } from "lucide-react";
 import { Tender } from "@/lib/types/tenderiq";
-import { fetchDailyTenders, fetchFilteredTenders, filterTendersByCategory, getAvailableCategories, getAvailableLocations } from "@/lib/api/tenderiq";
-import { useToast } from "@/hooks/use-toast";
+import { getAvailableCategories, getAvailableLocations } from "@/lib/api/tenderiq";
+import { filterTenders, groupTendersByCategory, getValueColor, parseTenderValue } from "@/lib/utils/tender-filters";
+import { useLiveFilters } from "@/hooks/useLiveFilters";
 import DateSelector from "./DateSelector";
 
 interface LiveTendersProps {
@@ -16,7 +16,6 @@ interface LiveTendersProps {
 }
 
 const LiveTenders = ({ onBack }: LiveTendersProps) => {
-  const { toast } = useToast();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -26,40 +25,17 @@ const LiveTenders = ({ onBack }: LiveTendersProps) => {
   const [selectedDate, setSelectedDate] = useState<string>();
   const [selectedDateRange, setSelectedDateRange] = useState<string>();
   const [includeAllDates, setIncludeAllDates] = useState(false);
-  const [tenders, setTenders] = useState<Tender[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const loadTenders = async () => {
-    setLoading(true);
-    try {
-      // Use new filtered API if date filters are set, otherwise use legacy endpoint
-      if (selectedDate || selectedDateRange || includeAllDates) {
-        const minVal = minValue ? parseFloat(minValue) : undefined;
-        const maxVal = maxValue ? parseFloat(maxValue) : undefined;
-        const response = await fetchFilteredTenders({
-          date: selectedDate,
-          date_range: selectedDateRange as any,
-          include_all_dates: includeAllDates,
-          category: selectedCategory !== "all" ? selectedCategory : undefined,
-          location: selectedLocation !== "all" ? selectedLocation : undefined,
-          min_value: minVal,
-          max_value: maxVal,
-        });
-        setTenders(response.tenders);
-      } else {
-        const data = await fetchDailyTenders();
-        setTenders(data);
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load tenders. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch tenders using custom hook
+  const { tenders, isLoading, refetch } = useLiveFilters({
+    selectedDate,
+    selectedDateRange,
+    includeAllDates,
+    selectedCategory: selectedCategory !== "all" ? selectedCategory : undefined,
+    selectedLocation: selectedLocation !== "all" ? selectedLocation : undefined,
+    minValue: minValue ? parseFloat(minValue) : null,
+    maxValue: maxValue ? parseFloat(maxValue) : null,
+  });
 
   const handleDateSelect = (date: string | null, dateRange: string | null, includeAll: boolean) => {
     setSelectedDate(date || undefined);
@@ -67,18 +43,9 @@ const LiveTenders = ({ onBack }: LiveTendersProps) => {
     setIncludeAllDates(includeAll);
   };
 
-  useEffect(() => {
-    loadTenders();
-  }, [selectedDate, selectedDateRange, includeAllDates]);
-
   // Extract unique categories and locations
   const categories = useMemo(() => {
     const cats = getAvailableCategories(tenders);
-    cats.map(cat => {
-      if (cat.includes("Civil")) {
-        setSelectedCategory(cat);
-      }
-    })
     return ["all", ...cats];
   }, [tenders]);
 
@@ -87,58 +54,21 @@ const LiveTenders = ({ onBack }: LiveTendersProps) => {
     return ["all", ...locs];
   }, [tenders]);
 
-  // Parse tender value to number
-  const parseValue = (value: string): number | null => {
-    if (value === "Ref Document") return null;
-    const match = value.match(/[\d.]+/);
-    return match ? parseFloat(match[0]) : null;
-  };
-
-  // Filter tenders
+  // Filter tenders based on UI state
   const filteredTenders = useMemo(() => {
-    return tenders.filter(tender => {
-      const matchesSearch = searchTerm === "" || 
-        tender.organization.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tender.tdrNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tender.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tender.category.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesCategory = selectedCategory === "all" || tender.category === selectedCategory;
-      const matchesLocation = selectedLocation === "all" || tender.location.includes(selectedLocation);
-
-      const tenderVal = parseValue(tender.tenderValue);
-      const minVal = minValue ? parseFloat(minValue) : null;
-      const maxVal = maxValue ? parseFloat(maxValue) : null;
-      
-      let matchesValue = true;
-      if (tenderVal !== null) {
-        if (minVal !== null && tenderVal < minVal) matchesValue = false;
-        if (maxVal !== null && tenderVal > maxVal) matchesValue = false;
-      }
-
-      return matchesSearch && matchesCategory && matchesLocation && matchesValue;
+    return filterTenders(tenders, {
+      searchTerm,
+      category: selectedCategory,
+      location: selectedLocation,
+      minValue: minValue ? parseFloat(minValue) : null,
+      maxValue: maxValue ? parseFloat(maxValue) : null,
     });
   }, [tenders, searchTerm, selectedCategory, selectedLocation, minValue, maxValue]);
 
   // Group by category
   const groupedTenders = useMemo(() => {
-    const grouped: Record<string, Tender[]> = {};
-    filteredTenders.forEach(tender => {
-      if (!grouped[tender.category]) {
-        grouped[tender.category] = [];
-      }
-      grouped[tender.category].push(tender);
-    });
-    return grouped;
+    return groupTendersByCategory(filteredTenders);
   }, [filteredTenders]);
-
-  const getValueColor = (value: string) => {
-    const numValue = parseValue(value);
-    if (numValue === null) return "text-muted-foreground";
-    if (numValue >= 30) return "text-green-600 font-semibold";
-    if (numValue >= 10) return "text-blue-600 font-semibold";
-    return "text-muted-foreground";
-  };
 
   return (
     <div className="space-y-6">
@@ -167,8 +97,8 @@ const LiveTenders = ({ onBack }: LiveTendersProps) => {
               <Filter className="h-5 w-5" />
               <CardTitle>Search & Filter Tenders</CardTitle>
             </div>
-            <Button variant="outline" size="sm" onClick={loadTenders} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <Button variant="outline" size="sm" onClick={refetch} disabled={isLoading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
@@ -245,7 +175,7 @@ const LiveTenders = ({ onBack }: LiveTendersProps) => {
       </div>
 
       {/* Loading State */}
-      {loading && (
+      {isLoading && (
         <Card className="p-12 text-center">
           <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
           <p className="text-muted-foreground mt-4">Loading daily tenders...</p>
@@ -253,7 +183,7 @@ const LiveTenders = ({ onBack }: LiveTendersProps) => {
       )}
 
       {/* Grouped Tender Lists */}
-      {!loading && (
+      {!isLoading && (
         <div className="space-y-6">
           {Object.entries(groupedTenders).map(([category, categoryTenders]) => (
           <div key={category} className="space-y-4">
