@@ -12,25 +12,6 @@ import { Calendar, Loader2, ChevronDown } from "lucide-react";
 import { fetchAvailableDates, AvailableDate } from "@/lib/api/tenderiq";
 import { useToast } from "@/hooks/use-toast";
 
-/**
- * Format a date string (ISO 8601 or timestamp) to a readable format
- * Uses run_at timestamp as the reliable source instead of date_str from backend
- */
-const formatDateFromRunAt = (runAt: string): string => {
-  try {
-    const date = new Date(runAt);
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: '2-digit',
-    };
-    return date.toLocaleDateString('en-US', options);
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    return 'Unknown Date';
-  }
-};
 
 interface DateSelectorProps {
   onDateSelect: (date: string | null, dateRange: string | null, includeAll: boolean) => void;
@@ -54,7 +35,23 @@ const DateSelector = ({
     const loadDates = async () => {
       setLoading(true);
       try {
-        const dates = await fetchAvailableDates();
+        const rawDates = await fetchAvailableDates();
+        
+        // Group by date and sum tender counts, as there can be multiple runs for the same date
+        const dateMap = new Map<string, AvailableDate>();
+        rawDates.forEach(d => {
+          if (dateMap.has(d.date)) {
+            const existing = dateMap.get(d.date)!;
+            existing.tender_count += d.tender_count;
+            if (d.is_latest) {
+              existing.is_latest = true;
+            }
+          } else {
+            // Create a copy to avoid modifying the original from the query cache
+            dateMap.set(d.date, { ...d });
+          }
+        });
+        const dates = Array.from(dateMap.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setAvailableDates(dates);
 
         // Set default to latest date
@@ -95,9 +92,7 @@ const DateSelector = ({
     } else if (selectedDate) {
       const selectedDateObj = availableDates.find(d => d.date === selectedDate);
       if (selectedDateObj) {
-        // Use run_at as reliable source for formatting instead of date_str
-        const formattedDate = formatDateFromRunAt(selectedDateObj.run_at);
-        setDisplayLabel(`${formattedDate} (${selectedDateObj.tender_count} tenders)`);
+        setDisplayLabel(`${selectedDateObj.date_str} (${selectedDateObj.tender_count} tenders)`);
       } else {
         setDisplayLabel(selectedDate);
       }
@@ -165,12 +160,11 @@ const DateSelector = ({
             <DropdownMenuLabel className="font-semibold">Specific Dates</DropdownMenuLabel>
             {availableDates.map((dateObj) => (
               <DropdownMenuItem
-                key={`${dateObj.date}-${dateObj.run_at}`}
+                key={dateObj.date}
                 onClick={() => handleDateSelect(dateObj.date)}
               >
                 <div className="flex justify-between w-full">
-                  {/* Use run_at as reliable source instead of date_str */}
-                  <span>{formatDateFromRunAt(dateObj.run_at)}</span>
+                  <span>{dateObj.date_str}</span>
                   <span className="text-xs text-muted-foreground ml-4">
                     ({dateObj.tender_count})
                   </span>
