@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ interface LiveTendersProps {
 
 const LiveTenders = ({ onBack }: LiveTendersProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
@@ -303,11 +305,10 @@ const LiveTenders = ({ onBack }: LiveTendersProps) => {
                         </div>
 
                         <div className="flex gap-2 pt-2">
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             className="hover-scale"
-                            onClick={() => tender.driveUrl && window.open(tender.driveUrl, '_blank')}
-                            disabled={!tender.driveUrl}
+                            onClick={() => navigate(`/viewtender/${tender.id}`)}
                           >
                             <ExternalLink className="h-4 w-4 mr-2" />
                             View Tender

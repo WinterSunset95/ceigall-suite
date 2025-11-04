@@ -9,6 +9,8 @@ import PlatformDashboard from "./pages/PlatformDashboard";
 import LegalIQDashboard from "./pages/LegalIQDashboard";
 import DMS from "./pages/DMS";
 import TenderIQ from "./pages/TenderIQ";
+import TenderDetails from "./pages/TenderDetails";
+import AnalyzeTender from "./pages/AnalyzeTender";
 import AnalyzeDocument from "./pages/AnalyzeDocument";
 import DocumentDrafting from "./pages/DocumentDrafting";
 import DocumentAnonymization from "./pages/DocumentAnonymization";
@@ -48,7 +50,9 @@ const App = () => (
           
           {/* Protected TenderIQ Routes */}
           <Route path="/tenderiq" element={<ProtectedRoute><AppLayout><TenderIQ /></AppLayout></ProtectedRoute>} />
-          
+          <Route path="/viewtender/:id" element={<ProtectedRoute><AppLayout><TenderDetails /></AppLayout></ProtectedRoute>} />
+          <Route path="/analyze/:id" element={<ProtectedRoute><AppLayout><AnalyzeTender /></AppLayout></ProtectedRoute>} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
