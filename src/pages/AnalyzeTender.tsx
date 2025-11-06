@@ -30,6 +30,10 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchTenderById, fetchTenderAnalysis } from '@/lib/api/tenderiq';
 import { TenderAnalysisResult } from '@/lib/types/tenderiq';
 import { useState, useEffect } from 'react';
+import TenderScopeOfWork from '@/components/tenderiq/TenderScopeOfWork';
+import TenderSections from '@/components/tenderiq/TenderSections';
+import TenderDataSheet from '@/components/tenderiq/TenderDataSheet';
+import TenderTemplates from '@/components/tenderiq/TenderTemplates';
 
 export default function AnalyzeTender() {
   const { id } = useParams();
@@ -144,72 +148,106 @@ export default function AnalyzeTender() {
           </Card>
         )}
         {/* Analysis Results */}
-        {analysisResults && analysisResults.one_pager_json && (
-          <div className="space-y-6">
-            {/* Project Overview */}
-            <Card className="p-6 space-y-4">
-              <h3 className="text-xl font-bold">Project Overview</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {analysisResults.one_pager_json.project_overview}
-              </p>
-            </Card>
+        {analysisResults && (
+          <Tabs defaultValue="one-pager" className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="one-pager">One Pager</TabsTrigger>
+              <TabsTrigger value="scope">Scope of Work</TabsTrigger>
+              <TabsTrigger value="sections">RFP Sections</TabsTrigger>
+              <TabsTrigger value="datasheet">Data Sheet</TabsTrigger>
+              <TabsTrigger value="templates">Templates</TabsTrigger>
+            </TabsList>
 
-            {/* Financial Requirements */}
-            <Card className="p-6 space-y-4">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Financial Requirements
-              </h3>
-              <ul className="space-y-2">
-                {analysisResults.one_pager_json.financial_requirements.map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+            <TabsContent value="one-pager" className="mt-6">
+              {analysisResults.one_pager_json ? (
+                <div className="space-y-6">
+                  {/* Project Overview */}
+                  <Card className="p-6 space-y-4">
+                    <h3 className="text-xl font-bold">Project Overview</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {analysisResults.one_pager_json.project_overview}
+                    </p>
+                  </Card>
 
-            {/* Eligibility Highlights */}
-            <Card className="p-6 space-y-4">
-              <h3 className="text-xl font-bold">Eligibility Highlights</h3>
-              <ul className="space-y-2">
-                {analysisResults.one_pager_json.eligibility_highlights.map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm">
-                    <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+                  {/* Financial Requirements */}
+                  <Card className="p-6 space-y-4">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      Financial Requirements
+                    </h3>
+                    <ul className="space-y-2">
+                      {analysisResults.one_pager_json.financial_requirements.map((item, i) => (
+                        <li key={i} className="flex items-start gap-3 text-sm">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
 
-            {/* Key Dates */}
-            <Card className="p-6 space-y-4">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Important Dates
-              </h3>
-              <ul className="space-y-2">
-                {analysisResults.one_pager_json.important_dates.map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm">
-                    <CheckCircle className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+                  {/* Eligibility Highlights */}
+                  <Card className="p-6 space-y-4">
+                    <h3 className="text-xl font-bold">Eligibility Highlights</h3>
+                    <ul className="space-y-2">
+                      {analysisResults.one_pager_json.eligibility_highlights.map((item, i) => (
+                        <li key={i} className="flex items-start gap-3 text-sm">
+                          <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
 
-            {/* Risk Analysis */}
-            <Card className="p-6 space-y-4">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Risk Analysis
-              </h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {analysisResults.one_pager_json.risk_analysis.summary}
-              </p>
-            </Card>
-          </div>
+                  {/* Key Dates */}
+                  <Card className="p-6 space-y-4">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Important Dates
+                    </h3>
+                    <ul className="space-y-2">
+                      {analysisResults.one_pager_json.important_dates.map((item, i) => (
+                        <li key={i} className="flex items-start gap-3 text-sm">
+                          <CheckCircle className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+
+                  {/* Risk Analysis */}
+                  <Card className="p-6 space-y-4">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5" />
+                      Risk Analysis
+                    </h3>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {analysisResults.one_pager_json.risk_analysis.summary}
+                    </p>
+                  </Card>
+                </div>
+              ) : (
+                <Card className="p-8 text-center">
+                  <p className="text-muted-foreground">No one-pager summary available for this analysis.</p>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="scope" className="mt-6">
+              <TenderScopeOfWork />
+            </TabsContent>
+
+            <TabsContent value="sections" className="mt-6">
+              <TenderSections />
+            </TabsContent>
+
+            <TabsContent value="datasheet" className="mt-6">
+              <TenderDataSheet />
+            </TabsContent>
+
+            <TabsContent value="templates" className="mt-6">
+              <TenderTemplates />
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </div>
