@@ -171,7 +171,7 @@ export default function TenderDetailsUI({
                 onClick={() => onNavigate(`/tenderiq/analyze/${tender.id}`)}
               >
                 <FileText className="h-4 w-4 mr-2" />
-                Analyze Document
+                Analyze Tender
               </Button>
               <Button
                 className="w-full justify-start"
@@ -239,15 +239,6 @@ export default function TenderDetailsUI({
                         <Button size="sm" variant="outline" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>
                           View
                         </Button>
-                        {!doc.isAIGenerated && (
-                          <Button
-                            size="sm"
-                            className="bg-accent hover:bg-accent/90"
-                            onClick={() => onNavigate(`/tenderiq/analyze/${tender.id}`)}
-                          >
-                            Analyze
-                          </Button>
-                        )}
                       </div>
                     </div>
                   </Card>
