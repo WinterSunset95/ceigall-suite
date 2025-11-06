@@ -4,14 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Search, Filter, RefreshCw, ExternalLink, MessageSquare, MapPin, Calendar, IndianRupee, Loader2 } from "lucide-react";
+import { Search, Filter, RefreshCw, ExternalLink, MessageSquare, MapPin, Calendar, IndianRupee, Loader2, Heart, History } from "lucide-react";
 import { Tender } from "@/lib/types/tenderiq";
 import { filterTenders, groupTendersByCategory, getAvailableCategories, getAvailableLocations } from "@/lib/utils/tender-filters";
 import { useLiveFilters } from "@/hooks/useLiveFilters";
 import DateSelector from "./DateSelector";
 
 interface LiveTendersProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 const LiveTenders = ({ onBack }: LiveTendersProps) => {
@@ -19,21 +19,22 @@ const LiveTenders = ({ onBack }: LiveTendersProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
-  const [minValue, setMinValue] = useState("300");
+  const [minValue, setMinValue] = useState("");
   const [maxValue, setMaxValue] = useState("");
-  const [selectedDate, setSelectedDate] = useState<string>();
+  const [selectedDate, setSelectedDate] = useState<string | undefined>();
   const [selectedDateRange, setSelectedDateRange] = useState<string>();
   const [includeAllDates, setIncludeAllDates] = useState(false);
 
   // Fetch tenders using custom hook
+  // Note: Convert minValue/maxValue from crores to rupees for API
   const { tenders, isLoading, refetch } = useLiveFilters({
     selectedDate,
     selectedDateRange,
     includeAllDates,
     selectedCategory: selectedCategory !== "all" ? selectedCategory : undefined,
     selectedLocation: selectedLocation !== "all" ? selectedLocation : undefined,
-    minValue: minValue ? parseFloat(minValue) : null,
-    maxValue: maxValue ? parseFloat(maxValue) : null,
+    minValue: minValue ? parseFloat(minValue) * 10000000 : null, // Convert crores to rupees
+    maxValue: maxValue ? parseFloat(maxValue) * 10000000 : null, // Convert crores to rupees
   });
 
   const handleDateSelect = (date: string | null, dateRange: string | null, includeAll: boolean) => {
@@ -53,14 +54,19 @@ const LiveTenders = ({ onBack }: LiveTendersProps) => {
     return ["all", ...locs];
   }, [tenders]);
 
+
   // Filter tenders based on UI state
+  // Note: minValue and maxValue inputs are in crores, need to convert to rupees for filtering
   const filteredTenders = useMemo(() => {
+    const minValueRupees = minValue ? parseFloat(minValue) * 10000000 : null; // Convert crores to rupees
+    const maxValueRupees = maxValue ? parseFloat(maxValue) * 10000000 : null; // Convert crores to rupees
+
     return filterTenders(tenders, {
       searchTerm,
       category: selectedCategory,
       location: selectedLocation,
-      minValue: minValue ? parseFloat(minValue) : null,
-      maxValue: maxValue ? parseFloat(maxValue) : null,
+      minValue: minValueRupees,
+      maxValue: maxValueRupees,
     });
   }, [tenders, searchTerm, selectedCategory, selectedLocation, minValue, maxValue]);
 
@@ -72,11 +78,7 @@ const LiveTenders = ({ onBack }: LiveTendersProps) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
             <ExternalLink className="h-6 w-6 text-primary-foreground" />
@@ -86,6 +88,16 @@ const LiveTenders = ({ onBack }: LiveTendersProps) => {
             <p className="text-sm text-muted-foreground">Browse daily scraped live tenders with smart filtering</p>
           </div>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate("/tenderiq/wishlist-history")}
+          className="gap-2"
+        >
+          <Heart className="h-4 w-4" />
+          <History className="h-4 w-4" />
+          Wishlist & History
+        </Button>
       </div>
 
       {/* Search & Filter Card */}

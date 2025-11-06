@@ -152,7 +152,7 @@ export default function TenderDetailsUI({
               <Button
                 className="w-full justify-start"
                 variant="outline"
-                onClick={() => onNavigate(`/analyze/${tender.id}`)}
+                onClick={() => onNavigate(`/tenderiq/analyze/${tender.id}`)}
               >
                 <FileText className="h-4 w-4 mr-2" />
                 Analyze Document
@@ -227,7 +227,7 @@ export default function TenderDetailsUI({
                           <Button
                             size="sm"
                             className="bg-accent hover:bg-accent/90"
-                            onClick={() => onNavigate(`/analyze/${tender.id}`)}
+                            onClick={() => onNavigate(`/tenderiq/analyze/${tender.id}`)}
                           >
                             Analyze
                           </Button>
