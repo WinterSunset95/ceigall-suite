@@ -1,6 +1,8 @@
 import { API_BASE_URL } from '@/lib/config/api';
 import { getAuthHeaders } from '@/lib/api/authHelper';
 import { Document, Tender, TenderDetailsType, TenderDocument, ScrapedTenderFile, ScrapedTender, TenderApiResponse, AvailableDate, FilteredTendersResponse, TenderActionRequest, TenderAnalysisResult } from '@/lib/types/tenderiq';
+import { FullTenderDetails } from '../types/tenderiq1';
+import { mockFullTenderDetails } from '../mock/tenderiq';
 
 // Transform API response to frontend format
 const transformTender = (apiTender: ScrapedTender, category: string): Tender => {
@@ -398,3 +400,10 @@ export const fetchTenderAnalysis = async (tenderId: string): Promise<TenderAnaly
     throw error;
   }
 };
+
+/**
+* Fetch the full details of a tender
+* */
+export const fetchFullTenderDetails = async (tenderId: string): Promise<FullTenderDetails> => {
+  return mockFullTenderDetails
+}

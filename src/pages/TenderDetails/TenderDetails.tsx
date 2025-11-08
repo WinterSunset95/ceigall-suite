@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { fetchTenderById } from '@/lib/api/tenderiq';
+import { fetchFullTenderDetails, fetchTenderById } from '@/lib/api/tenderiq';
 import { TenderDetailsType } from '@/lib/types/tenderiq';
 import TenderDetailsUI from '@/components/tenderiq/TenderDetailsUI';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
   fetchArchivedTenders,
 } from '@/lib/api/tenderiq';
 import { Tender } from '@/lib/types/tenderiq';
+import { FullTenderDetails } from '@/lib/types/tenderiq1';
 
 export default function TenderDetails() {
   const { id } = useParams<{ id: string }>();
@@ -20,9 +21,9 @@ export default function TenderDetails() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: tender, isLoading, isError } = useQuery<TenderDetailsType, Error>({
+  const { data: tender, isLoading, isError } = useQuery<FullTenderDetails, Error>({
     queryKey: ['tenderDetails', id],
-    queryFn: () => fetchTenderById(id!),
+    queryFn: () => fetchFullTenderDetails(id!),
     enabled: !!id,
   });
 
