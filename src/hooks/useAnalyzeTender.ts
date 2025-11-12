@@ -16,7 +16,7 @@ import {
   generateOnePager,
   generateDataSheet,
   deleteAnalysis,
-} from '@/lib/api/analyze';
+} from '@/lib/api/analyze.api';
 import {
   AnalyzeTenderRequest,
   AnalysisInitiatedResponse,
@@ -28,7 +28,7 @@ import {
   OnePagerResponse,
   DataSheetResponse,
   GenerateOnePagerRequest,
-} from '@/lib/types/analyze';
+} from '@/lib/types/analyze.type';
 import { useToast } from '@/hooks/use-toast';
 
 interface UseAnalyzeTenderOptions {

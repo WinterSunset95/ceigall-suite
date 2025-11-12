@@ -22,7 +22,6 @@ export default function LiveTendersUI({
   onNavigateToWishlist,
   isInWishlist,
 }: LiveTendersUIProps) {
-
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredQueries, setFilteredQueries] = useState<Query[]>(report ? report.queries : []);
   const [totalTenders, setTotalTenders] = useState(0);

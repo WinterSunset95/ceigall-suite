@@ -13,7 +13,7 @@ import DMS from "./pages/DMS";
 import TenderIQ from "./pages/TenderIQ";
 import BidSynopsis from "./pages/BidSynopsis/BidSynopsis";
 import TenderDetails from "./pages/TenderDetails/TenderDetails";
-import AnalyzeTender from "./pages/AnalyzeTender";
+import AnalyzeTender from "./pages/AnalyzeTender/AnalyzeTender";
 import WishlistHistory from "./pages/WishlistHistory/WishlistHistory";
 import AnalyzeDocument from "./pages/AnalyzeDocument";
 import DocumentDrafting from "./pages/DocumentDrafting";

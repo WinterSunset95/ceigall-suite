@@ -26,8 +26,9 @@ export default function BidSynopsis() {
       
       try {
         // Load saved data from localStorage
-        const savedData = loadBidSynopsis(id);
-        if (savedData?.ceigallData) {
+        const savedData = await loadBidSynopsis(id);
+        if (savedData == null) return;
+        if (savedData.ceigallData) {
           setCeigallData(savedData.ceigallData);
         }
         

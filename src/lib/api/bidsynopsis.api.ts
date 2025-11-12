@@ -1,5 +1,6 @@
 import { BidSynopsisData, BidSynopsisProps, SynopsisContent } from '@/lib/types/bidsynopsis.types';
 import { generateMockSynopsisContent } from '@/lib/mock/bidsynopsis.mock';
+import { API_BASE_URL } from '../config/api';
 
 /**
  * Fetches bid synopsis data for a given tender
@@ -34,20 +35,22 @@ export const saveBidSynopsis = (
 /**
  * Loads bid synopsis data from localStorage
  */
-export const loadBidSynopsis = (tenderId: string): Partial<BidSynopsisData> | null => {
-  const storageKey = `bid-synopsis-${tenderId}`;
-  const saved = localStorage.getItem(storageKey);
-  
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (e) {
-      console.error('Failed to load saved data', e);
-      return null;
+export const loadBidSynopsis = async (tenderId: string): Promise<BidSynopsisData | null> => {
+  const url = `${API_BASE_URL}/bidsynopsis/synopsis/${tenderId}`;
+  console.log(`Fetching bid synopsis for tender ${tenderId} from:`, url);
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch bid synopsis: ${response.status} ${errorText}`);
     }
+    const data = await response.json();
+    console.log(`Bid synopsis for tender ${tenderId} successful:`, data);
+    return data;
+  } catch (e) {
+    console.error(`Error in fetchBidSynopsis for tender ${tenderId}:`, e);
+    return null
   }
-  
-  return null;
 };
 
 /**
