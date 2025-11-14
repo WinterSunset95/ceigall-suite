@@ -177,9 +177,9 @@ export default function LiveTendersUI({
         {/* Tender Grid */}
         {report != undefined && 
           <div className="">
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
             {filteredQueries.map((query) => (
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                {query.tenders.map((tender, index) => (
+                query.tenders.map((tender, index) => (
                   <Card 
                     key={tender.id}
                     className="p-6 hover:shadow-lg transition-all cursor-pointer group"
@@ -298,9 +298,9 @@ export default function LiveTendersUI({
                       </div>
                     </div>
                   </Card>
-                ))}
-              </div>
+                ))
             ))}
+            </div>
           </div>
         }
       </div>
