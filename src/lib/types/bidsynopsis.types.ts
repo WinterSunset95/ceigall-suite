@@ -11,6 +11,7 @@ export interface BasicInfoItem {
 export interface RequirementItem {
   description: string;
   requirement: string;
+  extractedValue: string;
   ceigallValue: string;
 }
 

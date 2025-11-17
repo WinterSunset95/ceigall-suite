@@ -132,11 +132,12 @@ export default function BidSynopsisUI({
                           <td className="p-3 align-top font-medium">{item.description}</td>
                           <td className="p-3 align-top">{item.requirement}</td>
                           <td className="p-3 align-top">
-                            <Input
+                            {item.extractedValue}
+                            {/*<Input
                               placeholder="Extracted value"
                               className="text-sm h-8"
                               disabled
-                            />
+                            />*/}
                           </td>
                           <td className="p-3 align-top">
                             <Input
@@ -221,7 +222,7 @@ export default function BidSynopsisUI({
                           <tr key={idx} className={idx < synopsisContent.allRequirements.length - 1 ? 'border-b border-foreground' : ''}>
                             <td className="p-2 border-r-2 border-foreground align-top font-semibold">{item.description}</td>
                             <td className="p-2 border-r-2 border-foreground align-top leading-relaxed">{item.requirement}</td>
-                            <td className="p-2 border-r-2 border-foreground align-top"></td>
+                            <td className="p-2 border-r-2 border-foreground align-top">{item.extractedValue}</td>
                             <td className="p-2 align-top font-semibold">{ceigallData[idx] || item.ceigallValue}</td>
                           </tr>
                         ))}
